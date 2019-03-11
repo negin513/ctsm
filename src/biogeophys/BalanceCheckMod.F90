@@ -268,6 +268,8 @@ contains
      integer  :: indexp,indexc,indexl,indexg            ! index of first found in search loop
      real(r8) :: forc_rain_col(bounds%begc:bounds%endc) ! column level rain rate [mm/s]
      real(r8) :: forc_snow_col(bounds%begc:bounds%endc) ! column level snow rate [mm/s]
+     
+     real(r8) :: errsoi_col_max_val                     ! Maximum value of column-level soil/lake energy conservation error (W/m**2)
      !-----------------------------------------------------------------------
 
      associate(                                                                   & 
@@ -719,24 +721,38 @@ contains
 
        ! Soil energy balance check
 
-       found = .false.
-       do c = bounds%begc,bounds%endc
-          if (col%active(c)) then
-             if (abs(errsoi_col(c)) > 1.0e-5_r8 ) then
-                found = .true.
-                indexc = c
-             end if
-          end if
-       end do
-       if ( found ) then
+       !found = .false.
+       !do c = bounds%begc,bounds%endc
+       !   if (col%active(c)) then
+       !      if (abs(errsoi_col(c)) > 1.0e-5_r8 ) then
+       !         found = .true.
+       !         indexc = c
+       !      end if
+       !   end if
+       !end do
+       !if ( found ) then
+       !   write(iulog,*)'WARNING: BalanceCheck: soil balance error (W/m2)'
+       !   write(iulog,*)'nstep         = ',nstep
+       !   write(iulog,*)'errsoi_col    = ',errsoi_col(indexc)
+       !   if (abs(errsoi_col(indexc)) > 1.e-4_r8 .and. (DAnstep > skip_steps) ) then
+       !      write(iulog,*)'clm model is stopping'
+       !      call endrun(decomp_index=indexc, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
+       !   end if
+       !end if
+        errsoi_col_max_val  =  maxval(abs(errsoi_col))
+
+        if (abs(errsoi_col_max_val > 1.0e-5_r8 )) then
+          indexc = maxloc(abs(errsoi_col),1)
+
           write(iulog,*)'WARNING: BalanceCheck: soil balance error (W/m2)'
           write(iulog,*)'nstep         = ',nstep
           write(iulog,*)'errsoi_col    = ',errsoi_col(indexc)
-          if (abs(errsoi_col(indexc)) > 1.e-4_r8 .and. (DAnstep > skip_steps) ) then
+
+          if (abs(errsoi_col_max_val > 1.e-4_r8 .and. (DAnstep > skip_steps) )) then
              write(iulog,*)'clm model is stopping'
              call endrun(decomp_index=indexc, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
           end if
-       end if
+        end if
 
      end associate
 
