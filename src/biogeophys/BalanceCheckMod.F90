@@ -741,7 +741,7 @@ contains
        !end if
         errsoi_col_max_val  =  maxval(abs(errsoi_col))
 
-        if (abs(errsoi_col_max_val > 1.0e-5_r8 )) then
+        if (errsoi_col_max_val > 1.0e-5_r8 ) then
           indexc = maxloc(abs(errsoi_col),1)
 
           write(iulog,*)'WARNING: BalanceCheck: soil balance error (W/m2)'
