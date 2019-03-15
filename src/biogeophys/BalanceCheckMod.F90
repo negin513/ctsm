@@ -269,8 +269,9 @@ contains
      real(r8) :: forc_rain_col(bounds%begc:bounds%endc) ! column level rain rate [mm/s]
      real(r8) :: forc_snow_col(bounds%begc:bounds%endc) ! column level snow rate [mm/s]
      
-     real(r8) :: errsoi_col_max_val                     ! Maximum value of column-level soil/lake energy conservation error (W m-2)
-     real(r8) :: errh2osno_max_val                      ! Maximum value of error in h2osno (kg m-2)   
+     real(r8) :: errsoi_col_max_val                     ! Maximum value of column-level soil/lake energy conservation error over all columns(W m-2)
+     real(r8) :: errh2osno_max_val                      ! Maximum value of error in h2osno over all columns (kg m-2)   
+     real(r8) :: errh2o_max_val                         ! Maximum value of error in water conservation error (mm H2O)  over all columns
      !-----------------------------------------------------------------------
 
      associate(                                                                   & 
@@ -407,77 +408,137 @@ contains
 
        end do
 
-       found = .false.
-       do c = bounds%begc, bounds%endc
-          if (abs(errh2o(c)) > 1.e-9_r8) then
-             found = .true.
-             indexc = c
-          end if
-       end do
+       !found = .false.
+       !do c = bounds%begc, bounds%endc
+       !   if (abs(errh2o(c)) > 1.e-9_r8) then
+       !      found = .true.
+       !      indexc = c
+       !   end if
+       !end do
 
-       if ( found ) then
+       !if ( found ) then
 
-          write(iulog,*)'WARNING:  water balance error ',&
+       !   write(iulog,*)'WARNING:  water balance error ',&
+       !        ' nstep= ',nstep, &
+       !        ' local indexc= ',indexc,&
+       !        ! ' global indexc= ',GetGlobalIndex(decomp_index=indexc, clmlevel=namec), &
+       !        ' errh2o= ',errh2o(indexc)
+
+       !   if ((col%itype(indexc) == icol_roof .or. &
+       !        col%itype(indexc) == icol_road_imperv .or. &
+       !        col%itype(indexc) == icol_road_perv) .and. &
+       !        abs(errh2o(indexc)) > 1.e-5_r8 .and. (DAnstep > skip_steps) ) then
+
+       !      write(iulog,*)'clm urban model is stopping - error is greater than 1e-5 (mm)'
+       !      write(iulog,*)'nstep                 = ',nstep
+       !      write(iulog,*)'errh2o                = ',errh2o(indexc)
+       !      write(iulog,*)'forc_rain             = ',forc_rain_col(indexc)*dtime
+       !      write(iulog,*)'forc_snow             = ',forc_snow_col(indexc)*dtime
+       !      write(iulog,*)'endwb                 = ',endwb(indexc)
+       !      write(iulog,*)'begwb                 = ',begwb(indexc)
+       !      write(iulog,*)'qflx_evap_tot         = ',qflx_evap_tot(indexc)*dtime
+       !      write(iulog,*)'qflx_sfc_irrig        = ',qflx_sfc_irrig(indexc)*dtime
+       !      write(iulog,*)'qflx_surf             = ',qflx_surf(indexc)*dtime
+       !      write(iulog,*)'qflx_qrgwl            = ',qflx_qrgwl(indexc)*dtime
+       !      write(iulog,*)'qflx_drain            = ',qflx_drain(indexc)*dtime
+       !      write(iulog,*)'qflx_ice_runoff_snwcp = ',qflx_ice_runoff_snwcp(indexc)*dtime
+       !      write(iulog,*)'qflx_ice_runoff_xs    = ',qflx_ice_runoff_xs(indexc)*dtime
+       !      write(iulog,*)'qflx_snwcp_discarded_ice = ',qflx_snwcp_discarded_ice(indexc)*dtime
+       !      write(iulog,*)'qflx_snwcp_discarded_liq = ',qflx_snwcp_discarded_liq(indexc)*dtime
+       !      write(iulog,*)'deltawb          = ',endwb(indexc)-begwb(indexc)
+       !      write(iulog,*)'deltawb/dtime    = ',(endwb(indexc)-begwb(indexc))/dtime
+       !      write(iulog,*)'deltaflux        = ',forc_rain_col(indexc)+forc_snow_col(indexc) - (qflx_evap_tot(indexc) + &
+       !           qflx_surf(indexc)+qflx_drain(indexc))
+
+       !      write(iulog,*)'clm model is stopping'
+       !      call endrun(decomp_index=indexc, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
+
+       !   else if (abs(errh2o(indexc)) > 1.e-5_r8 .and. (DAnstep > skip_steps) ) then
+
+       !      write(iulog,*)'clm model is stopping - error is greater than 1e-5 (mm)'
+       !      write(iulog,*)'nstep                 = ',nstep
+       !      write(iulog,*)'errh2o                = ',errh2o(indexc)
+       !      write(iulog,*)'forc_rain             = ',forc_rain_col(indexc)*dtime
+       !      write(iulog,*)'forc_snow             = ',forc_snow_col(indexc)*dtime
+       !      write(iulog,*)'endwb                 = ',endwb(indexc)
+       !      write(iulog,*)'begwb                 = ',begwb(indexc)
+       !      
+       !      write(iulog,*)'qflx_evap_tot         = ',qflx_evap_tot(indexc)*dtime
+       !      write(iulog,*)'qflx_sfc_irrig        = ',qflx_sfc_irrig(indexc)*dtime
+       !      write(iulog,*)'qflx_surf             = ',qflx_surf(indexc)*dtime
+       !      write(iulog,*)'qflx_qrgwl            = ',qflx_qrgwl(indexc)*dtime
+       !      write(iulog,*)'qflx_drain            = ',qflx_drain(indexc)*dtime
+       !      write(iulog,*)'qflx_drain_perched    = ',qflx_drain_perched(indexc)*dtime
+       !      write(iulog,*)'qflx_flood            = ',qflx_floodc(indexc)*dtime
+       !      write(iulog,*)'qflx_ice_runoff_snwcp = ',qflx_ice_runoff_snwcp(indexc)*dtime
+       !      write(iulog,*)'qflx_ice_runoff_xs    = ',qflx_ice_runoff_xs(indexc)*dtime
+       !      write(iulog,*)'qflx_glcice_dyn_water_flux = ', qflx_glcice_dyn_water_flux(indexc)*dtime
+       !      write(iulog,*)'qflx_snwcp_discarded_ice = ',qflx_snwcp_discarded_ice(indexc)*dtime
+       !      write(iulog,*)'qflx_snwcp_discarded_liq = ',qflx_snwcp_discarded_liq(indexc)*dtime
+       !      write(iulog,*)'clm model is stopping'
+       !      call endrun(decomp_index=indexc, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
+       !   end if
+       !end if
+       
+       ! Water balance check -- Corrected -- NS(2019-03) --remove this comment later....
+       
+       errh2o_max_val = maxval(abs(errh2o))
+
+       if (errh2o_max_val > 1.e-9_r8) then
+              indexc = maxloc(abs(errh2o),1)
+              write(iulog,*)'WARNING:  water balance error ',&
                ' nstep= ',nstep, &
                ' local indexc= ',indexc,&
                ! ' global indexc= ',GetGlobalIndex(decomp_index=indexc, clmlevel=namec), &
                ' errh2o= ',errh2o(indexc)
+        end if 
 
-          if ((col%itype(indexc) == icol_roof .or. &
-               col%itype(indexc) == icol_road_imperv .or. &
-               col%itype(indexc) == icol_road_perv) .and. &
-               abs(errh2o(indexc)) > 1.e-5_r8 .and. (DAnstep > skip_steps) ) then
 
-             write(iulog,*)'clm urban model is stopping - error is greater than 1e-5 (mm)'
-             write(iulog,*)'nstep                 = ',nstep
-             write(iulog,*)'errh2o                = ',errh2o(indexc)
-             write(iulog,*)'forc_rain             = ',forc_rain_col(indexc)*dtime
-             write(iulog,*)'forc_snow             = ',forc_snow_col(indexc)*dtime
-             write(iulog,*)'endwb                 = ',endwb(indexc)
-             write(iulog,*)'begwb                 = ',begwb(indexc)
-             write(iulog,*)'qflx_evap_tot         = ',qflx_evap_tot(indexc)*dtime
-             write(iulog,*)'qflx_sfc_irrig        = ',qflx_sfc_irrig(indexc)*dtime
-             write(iulog,*)'qflx_surf             = ',qflx_surf(indexc)*dtime
-             write(iulog,*)'qflx_qrgwl            = ',qflx_qrgwl(indexc)*dtime
-             write(iulog,*)'qflx_drain            = ',qflx_drain(indexc)*dtime
-             write(iulog,*)'qflx_ice_runoff_snwcp = ',qflx_ice_runoff_snwcp(indexc)*dtime
-             write(iulog,*)'qflx_ice_runoff_xs    = ',qflx_ice_runoff_xs(indexc)*dtime
-             write(iulog,*)'qflx_snwcp_discarded_ice = ',qflx_snwcp_discarded_ice(indexc)*dtime
-             write(iulog,*)'qflx_snwcp_discarded_liq = ',qflx_snwcp_discarded_liq(indexc)*dtime
-             write(iulog,*)'deltawb          = ',endwb(indexc)-begwb(indexc)
-             write(iulog,*)'deltawb/dtime    = ',(endwb(indexc)-begwb(indexc))/dtime
-             write(iulog,*)'deltaflux        = ',forc_rain_col(indexc)+forc_snow_col(indexc) - (qflx_evap_tot(indexc) + &
-                  qflx_surf(indexc)+qflx_drain(indexc))
+        if ((errh2o_max_val > 1.e-5_r8) .and. (DAnstep > skip_steps)) then
+              
+              write(iulog,*)'clm urban model is stopping - error is greater than 1e-5 (mm)'
+              write(iulog,*)'nstep                 = ',nstep
+              write(iulog,*)'errh2o                = ',errh2o(indexc)
+              write(iulog,*)'forc_rain             = ',forc_rain_col(indexc)*dtime
+              write(iulog,*)'forc_snow             = ',forc_snow_col(indexc)*dtime
+              write(iulog,*)'endwb                 = ',endwb(indexc)
+              write(iulog,*)'begwb                 = ',begwb(indexc)
 
-             write(iulog,*)'clm model is stopping'
-             call endrun(decomp_index=indexc, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
+              write(iulog,*)'qflx_evap_tot         = ',qflx_evap_tot(indexc)*dtime
+              write(iulog,*)'qflx_sfc_irrig        = ',qflx_sfc_irrig(indexc)*dtime
+              write(iulog,*)'qflx_surf             = ',qflx_surf(indexc)*dtime
+              write(iulog,*)'qflx_qrgwl            = ',qflx_qrgwl(indexc)*dtime
+              write(iulog,*)'qflx_drain            = ',qflx_drain(indexc)*dtime
 
-          else if (abs(errh2o(indexc)) > 1.e-5_r8 .and. (DAnstep > skip_steps) ) then
+              write(iulog,*)'qflx_ice_runoff_snwcp = ',qflx_ice_runoff_snwcp(indexc)*dtime
+              write(iulog,*)'qflx_ice_runoff_xs    = ',qflx_ice_runoff_xs(indexc)*dtime
 
-             write(iulog,*)'clm model is stopping - error is greater than 1e-5 (mm)'
-             write(iulog,*)'nstep                 = ',nstep
-             write(iulog,*)'errh2o                = ',errh2o(indexc)
-             write(iulog,*)'forc_rain             = ',forc_rain_col(indexc)*dtime
-             write(iulog,*)'forc_snow             = ',forc_snow_col(indexc)*dtime
-             write(iulog,*)'endwb                 = ',endwb(indexc)
-             write(iulog,*)'begwb                 = ',begwb(indexc)
-             
-             write(iulog,*)'qflx_evap_tot         = ',qflx_evap_tot(indexc)*dtime
-             write(iulog,*)'qflx_sfc_irrig        = ',qflx_sfc_irrig(indexc)*dtime
-             write(iulog,*)'qflx_surf             = ',qflx_surf(indexc)*dtime
-             write(iulog,*)'qflx_qrgwl            = ',qflx_qrgwl(indexc)*dtime
-             write(iulog,*)'qflx_drain            = ',qflx_drain(indexc)*dtime
-             write(iulog,*)'qflx_drain_perched    = ',qflx_drain_perched(indexc)*dtime
-             write(iulog,*)'qflx_flood            = ',qflx_floodc(indexc)*dtime
-             write(iulog,*)'qflx_ice_runoff_snwcp = ',qflx_ice_runoff_snwcp(indexc)*dtime
-             write(iulog,*)'qflx_ice_runoff_xs    = ',qflx_ice_runoff_xs(indexc)*dtime
-             write(iulog,*)'qflx_glcice_dyn_water_flux = ', qflx_glcice_dyn_water_flux(indexc)*dtime
-             write(iulog,*)'qflx_snwcp_discarded_ice = ',qflx_snwcp_discarded_ice(indexc)*dtime
-             write(iulog,*)'qflx_snwcp_discarded_liq = ',qflx_snwcp_discarded_liq(indexc)*dtime
-             write(iulog,*)'clm model is stopping'
-             call endrun(decomp_index=indexc, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
-          end if
-       end if
+              write(iulog,*)'qflx_snwcp_discarded_ice = ',qflx_snwcp_discarded_ice(indexc)*dtime
+              write(iulog,*)'qflx_snwcp_discarded_liq = ',qflx_snwcp_discarded_liq(indexc)*dtime
+!!!TODO : NS (2019-03) Why this prints different outputs for these two different conditions?
+!!! WE probably need deltawb deltawp/dtime and deltaflux for all conditions?
+!!! Also why only roof, road_imprev, road_prev and not icol_sunwall, icol_shadewall, etc?
+!!! This might be further simplifiezed.simplified....
+!!! Please note the order of printing the messages is slightly changed.
+
+              if (col%itype(indexc) == icol_roof .or. &
+                   col%itype(indexc) == icol_road_imperv .or. &
+                   col%itype(indexc) == icol_road_perv) then
+                   write(iulog,*)'deltawb          = ',endwb(indexc)-begwb(indexc)
+                   write(iulog,*)'deltawb/dtime    = ',(endwb(indexc)-begwb(indexc))/dtime
+                   write(iulog,*)'deltaflux        = ',forc_rain_col(indexc) + & 
+                              forc_snow_col(indexc) - (qflx_evap_tot(indexc) + &
+                              qflx_surf(indexc)+qflx_drain(indexc))
+              else
+                   write(iulog,*)'qflx_drain_perched    = ',qflx_drain_perched(indexc)*dtime
+                   write(iulog,*)'qflx_flood            = ',qflx_floodc(indexc)*dtime
+                   write(iulog,*)'qflx_glcice_dyn_water_flux = ', qflx_glcice_dyn_water_flux(indexc)*dtime
+              end if
+
+              write(iulog,*)'clm model is stopping'
+              call endrun(decomp_index=indexc, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
+
+        end if
 
        ! Snow balance check
 
@@ -669,35 +730,41 @@ contains
        end do
 
        ! Solar radiation energy balance check
+!!!! NS : Do we need  errsol and errlon to be spval? why not assign zero?
+!!!!! Why not assign zero to if (not active ....) 
 
-       found = .false.
-       do p = bounds%begp, bounds%endp
-          if (patch%active(p)) then
-             if ( (errsol(p) /= spval) .and. (abs(errsol(p)) > 1.e-7_r8) ) then
-                found = .true.
-                indexp = p
-                indexg = patch%gridcell(indexp)
-             end if
-          end if
-       end do
-       if ( found  .and. (DAnstep > skip_steps) ) then
-          write(iulog,*)'WARNING:: BalanceCheck, solar radiation balance error (W/m2)'
-          write(iulog,*)'nstep         = ',nstep
-          write(iulog,*)'errsol        = ',errsol(indexp)
-          if (abs(errsol(indexp)) > 1.e-5_r8 ) then
-             write(iulog,*)'clm model is stopping - error is greater than 1e-5 (W/m2)'
-             write(iulog,*)'fsa           = ',fsa(indexp)
-             write(iulog,*)'fsr           = ',fsr(indexp)
-             write(iulog,*)'forc_solad(1) = ',forc_solad(indexg,1)
-             write(iulog,*)'forc_solad(2) = ',forc_solad(indexg,2)
-             write(iulog,*)'forc_solai(1) = ',forc_solai(indexg,1)
-             write(iulog,*)'forc_solai(2) = ',forc_solai(indexg,2)
-             write(iulog,*)'forc_tot      = ',forc_solad(indexg,1)+forc_solad(indexg,2) &
-               +forc_solai(indexg,1)+forc_solai(indexg,2)
-             write(iulog,*)'clm model is stopping'
-             call endrun(decomp_index=indexp, clmlevel=namep, msg=errmsg(sourcefile, __LINE__))
-          end if
-       end if
+!       found = .false.
+!       do p = bounds%begp, bounds%endp
+!          if (patch%active(p)) then
+!             if ( (errsol(p) /= spval) .and. (abs(errsol(p)) > 1.e-7_r8) ) then
+!                found = .true.
+!                indexp = p
+!                indexg = patch%gridcell(indexp)
+!             end if
+!          end if
+!       end do
+!       if ( found  .and. (DAnstep > skip_steps) ) then
+!          write(iulog,*)'WARNING:: BalanceCheck, solar radiation balance error (W/m2)'
+!          write(iulog,*)'nstep         = ',nstep
+!          write(iulog,*)'errsol        = ',errsol(indexp)
+!          if (abs(errsol(indexp)) > 1.e-5_r8 ) then
+!             write(iulog,*)'clm model is stopping - error is greater than 1e-5 (W/m2)'
+!             write(iulog,*)'fsa           = ',fsa(indexp)
+!             write(iulog,*)'fsr           = ',fsr(indexp)
+!             write(iulog,*)'forc_solad(1) = ',forc_solad(indexg,1)
+!             write(iulog,*)'forc_solad(2) = ',forc_solad(indexg,2)
+!             write(iulog,*)'forc_solai(1) = ',forc_solai(indexg,1)
+!             write(iulog,*)'forc_solai(2) = ',forc_solai(indexg,2)
+!             write(iulog,*)'forc_tot      = ',forc_solad(indexg,1)+forc_solad(indexg,2) &
+!               +forc_solai(indexg,1)+forc_solai(indexg,2)
+!             write(iulog,*)'clm model is stopping'
+!             call endrun(decomp_index=indexp, clmlevel=namep, msg=errmsg(sourcefile, __LINE__))
+!          end if
+!       end if
+
+
+
+
 
        ! Longwave radiation energy balance check
 
