@@ -765,10 +765,13 @@ contains
 !          end if
 !      end if
 !call t_stopf('solbalchk')
-	errsol_max_val = maxval(abs(errsol), mask = errsol.eq.spval)
+	errsol_max_val = maxval(abs(errsol), mask = (errsol < spval))
+	write(iulog,*)'errsol_max_val         = ',errsol_max_val
 	if ( (errsol_max_val > 1.e-7_r8) .and. (DAnstep > skip_steps) ) then
-	    indexp = maxloc(abs(errsol),1 , mask = errsol.eq.spval)
+	    indexp = maxloc(abs(errsol),1 , mask = (errsol < spval))
+	    write(iulog,*)'indexp         = ',indexp
 	    indexg = patch%gridcell(indexp)
+	    write(iulog,*)'indexg         = ',indexg
 	    write(iulog,*)'WARNING:: BalanceCheck, solar radiation balance error (W/m2)'
 	    write(iulog,*)'nstep         = ',nstep
 	    write(iulog,*)'errsol        = ',errsol(indexp)
@@ -791,24 +794,24 @@ contains
 
        ! Longwave radiation energy balance check
 
-       found = .false.
-       do p = bounds%begp, bounds%endp
-          if (patch%active(p)) then
-             if ( (errlon(p) /= spval) .and. (abs(errlon(p)) > 1.e-7_r8) ) then
-                found = .true.
-                indexp = p
-             end if
-          end if
-       end do
-       if ( found  .and. (DAnstep > skip_steps) ) then
-          write(iulog,*)'WARNING: BalanceCheck: longwave energy balance error (W/m2)' 
-          write(iulog,*)'nstep        = ',nstep 
-          write(iulog,*)'errlon       = ',errlon(indexp)
-          if (abs(errlon(indexp)) > 1.e-5_r8 ) then
-             write(iulog,*)'clm model is stopping - error is greater than 1e-5 (W/m2)'
-             call endrun(decomp_index=indexp, clmlevel=namep, msg=errmsg(sourcefile, __LINE__))
-          end if
-       end if
+!       found = .false.
+!       do p = bounds%begp, bounds%endp
+!          if (patch%active(p)) then
+!             if ( (errlon(p) /= spval) .and. (abs(errlon(p)) > 1.e-7_r8) ) then
+!                found = .true.
+!                indexp = p
+!             end if
+!          end if
+!       end do
+!       if ( found  .and. (DAnstep > skip_steps) ) then
+!          write(iulog,*)'WARNING: BalanceCheck: longwave energy balance error (W/m2)' 
+!          write(iulog,*)'nstep        = ',nstep 
+!          write(iulog,*)'errlon       = ',errlon(indexp)
+!          if (abs(errlon(indexp)) > 1.e-5_r8 ) then
+!             write(iulog,*)'clm model is stopping - error is greater than 1e-5 (W/m2)'
+!             call endrun(decomp_index=indexp, clmlevel=namep, msg=errmsg(sourcefile, __LINE__))
+!          end if
+!       end if
 
 !!	errlon_max_val = maxval(abs(errlon), mask = errlon.eq.spval)
 !	if ((errlon_max_val > 1.e-7_r8) .and. (DAnstep > skip_steps)) then
@@ -822,7 +825,21 @@ contains
 !	      call endrun(decomp_index=indexp, clmlevel=namep, msg=errmsg(sourcefile, __LINE__))
 !	    end if
 !	end if
-!
+!	errlon_max_val = maxval(abs(errlon), mask = errlon.eq.spval)
+
+      errlon_max_val = maxval(abs(errlon), mask = (errlon < spval))
+      write(iulog,*)'errsol_max_val         = ',errsol_max_val
+      if ( (errlon_max_val > 1.e-7_r8) .and. (DAnstep > skip_steps) ) then
+           indexp = maxloc(abs(errlon),1 , mask = (errlon < spval))
+	   write(iulog,*)'indexp         = ',indexp
+           write(iulog,*)'WARNING: BalanceCheck: longwave energy balance error (W/m2)'
+           write(iulog,*)'nstep        = ',nstep
+           write(iulog,*)'errlon       = ',errlon(indexp)
+           if (errlon_max_val > 1.e-5_r8 ) then
+              write(iulog,*)'clm model is stopping - error is greater than 1e-5 (W/m2)'
+              call endrun(decomp_index=indexp, clmlevel=namep, msg=errmsg(sourcefile, __LINE__))
+           end if
+       end if
 
        ! Surface energy balance check
 
@@ -867,10 +884,10 @@ contains
 !       end if
 !
 
-       errseb_max_val = maxval(abs(errseb), mask = errseb.eq.spval)
+       errseb_max_val = maxval(abs(errseb), mask = (errseb < spval))
 
        if ((errseb_max_val > 1.e-7_r8) .and. (DAnstep > skip_steps)) then
-          indexp = maxloc(abs(errseb),1 , mask = errseb.eq.spval)
+          indexp = maxloc(abs(errseb),1 , mask = (errseb < spval))
           indexc = patch%column(indexp)
           indexg = patch%gridcell(indexp)
           write(iulog,*)'WARNING: BalanceCheck: surface flux energy balance error (W/m2)'
