@@ -623,11 +623,18 @@ contains
 !call t_startf('solbalchk')
 !call t_stopf('solbalchk')
         errsol_max_val = maxval(abs(errsol), mask = (errsol < spval))
+	write(iulog,*)'--------------------------------------------------'
         write(iulog,*)'errsol_max_val         = ',errsol_max_val
+	indexp = maxloc(abs(errsol), 1 , mask = (errsol < spval))
+	write(iulog,*)'indexp         = ',indexp
+	write(iulog,*)'errsol        = ',errsol(indexp)
+	write(iulog,*)'..................................................'
+	indexp = maxloc(abs(errsol), 1 , mask = (errsol < spval)) + bounds%begp -1
+	write(iulog,*)'indexp         = ',indexp
+	write(iulog,*)'errsol        = ',errsol(indexp)
+	write(iulog,*)'--------------------------------------------------'
         if  ((errsol_max_val > energy_warning_thresh) .and. (DAnstep > skip_steps)) then
-            indexp = maxloc(abs(errsol), 1 , mask = (errsol < spval)) + bounds%begp -1
-            write(iulog,*)'indexp         = ',indexp
-            indexg = patch%gridcell(indexp)
+	    indexg = patch%gridcell(indexp)
             write(iulog,*)'indexg         = ',indexg
             write(iulog,*)'WARNING:: BalanceCheck, solar radiation balance error (W/m2)'
             write(iulog,*)'nstep         = ',nstep
