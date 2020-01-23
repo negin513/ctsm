@@ -174,7 +174,7 @@ contains
   pure function FracSnowDuringMelt(this, c, h2osno_total, int_snow) result(frac_sno_albedo)
     !
     ! !DESCRIPTION:
-    ! Single-point function giving frac_sno_albedow during times when the snow pack is melting
+    ! Single-point function giving frac_sno_albedo during times when the snow pack is melting
     !
     ! This is currently not implemented for the NiuYang07 method, so simply returns NaN. (We
     ! can't abort, since this is a pure function.) That's okay since this is only called

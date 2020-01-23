@@ -244,7 +244,7 @@ contains
   pure function FracSnowDuringMelt(this, c, h2osno_total, int_snow) result(frac_sno_albedo)
     !
     ! !DESCRIPTION:
-    ! Single-point function giving frac_sno_albedow during times when the snow pack is melting
+    ! Single-point function giving frac_sno_albedo during times when the snow pack is melting
     !
     ! !ARGUMENTS:
     real(r8) :: frac_sno_albedo  ! function result
