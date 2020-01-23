@@ -254,7 +254,7 @@ contains
          tlai                => canopystate_inst%tlai_patch          , & ! Input:  [real(r8) (:)   ]  one-sided leaf area index, no burying by snow     
          tsai                => canopystate_inst%tsai_patch          , & ! Input:  [real(r8) (:)   ]  one-sided stem area index, no burying by snow     
          
-         frac_sno_zzzz            => waterdiagnosticbulk_inst%frac_sno_zzzz_col         , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)       
+         frac_sno_albedo            => waterdiagnosticbulk_inst%frac_sno_albedo_col         , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)       
          h2osoi_vol          => waterstatebulk_inst%h2osoi_vol_col       , & ! Input:  [real(r8) (:,:) ]  volumetric soil water (0<=h2osoi_vol<=watsat)   
          h2osoi_liq          => waterstatebulk_inst%h2osoi_liq_col       , & ! Input:  [real(r8) (:,:) ]  liquid soil water (kg/m2)                       
          h2osoi_ice          => waterstatebulk_inst%h2osoi_ice_col       , & ! Input:  [real(r8) (:,:) ]  frozen soil water (kg/m2)                       
@@ -324,7 +324,7 @@ contains
                lnd_frc_mbl(p) = 0.0_r8
             endif
             ! Eventhough this is not related to albedo this uses frac_sno_albedo.
-            lnd_frc_mbl(p) = lnd_frc_mbl(p) * (1.0_r8 - frac_sno_zzzz(c))
+            lnd_frc_mbl(p) = lnd_frc_mbl(p) * (1.0_r8 - frac_sno_albedo(c))
          else          
             lnd_frc_mbl(p) = 0.0_r8   
          end if

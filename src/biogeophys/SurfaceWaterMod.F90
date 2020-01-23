@@ -57,7 +57,7 @@ contains
     ! - If h2osfc is too small, it is set to 0, with all of the water there being moved
     !   to the top soil layer
     !
-    ! - frac_sno_zzzz is potentially updated to ensure that frac_sno_zzzz + frac_h2osfc <= 1
+    ! - frac_sno_albedo is potentially updated to ensure that frac_sno_albedo + frac_h2osfc <= 1
     !
     ! Note that this just operates over soil points: special landunits have frac_h2osfc fixed at 0
     !
@@ -103,7 +103,7 @@ contains
          h2osno_total                  = h2osno_total(begc:endc), &
          h2osfc                        = b_waterstate_inst%h2osfc_col(begc:endc), &
          ! Outputs
-         frac_sno_zzzz                      = b_waterdiagnostic_inst%frac_sno_zzzz_col(begc:endc), &
+         frac_sno_albedo                      = b_waterdiagnostic_inst%frac_sno_albedo_col(begc:endc), &
          frac_sno_fluxes                  = b_waterdiagnostic_inst%frac_sno_fluxes_col(begc:endc), &
          frac_h2osfc                   = b_waterdiagnostic_inst%frac_h2osfc_col(begc:endc), &
          frac_h2osfc_nosnow            = b_waterdiagnostic_inst%frac_h2osfc_nosnow_col(begc:endc), &
@@ -151,7 +151,7 @@ contains
   !-----------------------------------------------------------------------
   subroutine BulkDiag_FracH2oSfc(bounds, num_soilc, filter_soilc, &
        dtime, micro_sigma, h2osno_total, &
-       h2osfc, frac_sno_zzzz, frac_sno_fluxes, frac_h2osfc, frac_h2osfc_nosnow, &
+       h2osfc, frac_sno_albedo, frac_sno_fluxes, frac_h2osfc, frac_h2osfc_nosnow, &
        qflx_too_small_h2osfc_to_soil)
     !
     ! !DESCRIPTION:
@@ -164,7 +164,7 @@ contains
     ! - If h2osfc is too small, a flux is calculated that should be applied immediately
     !   after this routine to move all remaining h2osfc to the top soil layer
     !
-    ! - frac_sno_zzzz is potentially updated to ensure that frac_sno_zzzz + frac_h2osfc <= 1
+    ! - frac_sno_albedo is potentially updated to ensure that frac_sno_albedo + frac_h2osfc <= 1
     !
     ! Note that this just operates over soil points: special landunits have frac_h2osfc fixed at 0
     !
@@ -177,7 +177,7 @@ contains
     real(r8) , intent(in)    :: micro_sigma( bounds%begc: )                   ! microtopography pdf sigma (m)
     real(r8) , intent(in)    :: h2osno_total( bounds%begc: )                  ! total snow water (mm H2O)
     real(r8) , intent(in)    :: h2osfc( bounds%begc: )                        ! surface water (mm)
-    real(r8) , intent(inout) :: frac_sno_zzzz( bounds%begc: )                      ! fraction of ground covered by snow (0 to 1)
+    real(r8) , intent(inout) :: frac_sno_albedo( bounds%begc: )                      ! fraction of ground covered by snow (0 to 1)
     real(r8) , intent(inout) :: frac_sno_fluxes( bounds%begc: )                  ! eff. fraction of ground covered by snow (0 to 1)
     real(r8) , intent(inout) :: frac_h2osfc( bounds%begc: )                   ! col fractional area with surface water greater than zero
     real(r8) , intent(inout) :: frac_h2osfc_nosnow( bounds%begc: )            ! col fractional area with surface water greater than zero (if no snow present)
@@ -193,7 +193,7 @@ contains
     SHR_ASSERT_FL((ubound(micro_sigma, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(h2osno_total, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(h2osfc, 1) == bounds%endc), sourcefile, __LINE__)
-    SHR_ASSERT_FL((ubound(frac_sno_zzzz, 1) == bounds%endc), sourcefile, __LINE__)
+    SHR_ASSERT_FL((ubound(frac_sno_albedo, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(frac_sno_fluxes, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(frac_h2osfc, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(frac_h2osfc_nosnow, 1) == bounds%endc), sourcefile, __LINE__)
@@ -244,20 +244,20 @@ contains
        ! Note that there is a similar adjustment in subroutine SnowCompaction (related
        ! to fsno_melt); these two should be kept in sync (e.g., if a 3rd fraction is
        ! ever added in one place, it needs to be added in the other place, too).
-       if (frac_sno_zzzz(c) > (1._r8 - frac_h2osfc(c)) .and. h2osno_total(c) > 0) then
+       if (frac_sno_albedo(c) > (1._r8 - frac_h2osfc(c)) .and. h2osno_total(c) > 0) then
 
           if (frac_h2osfc(c) > 0.01_r8) then             
-             frac_h2osfc(c) = max(1.0_r8 - frac_sno_zzzz(c),0.01_r8)
-             frac_sno_zzzz(c) = 1.0_r8 - frac_h2osfc(c)
+             frac_h2osfc(c) = max(1.0_r8 - frac_sno_albedo(c),0.01_r8)
+             frac_sno_albedo(c) = 1.0_r8 - frac_h2osfc(c)
           else
-             frac_sno_zzzz(c) = 1.0_r8 - frac_h2osfc(c)
+             frac_sno_albedo(c) = 1.0_r8 - frac_h2osfc(c)
           endif
           ! NOTE(wjs, 2019-07-16) The following line should possibly be in a
           ! use_subgrid_fluxes conditional (if false, set frac_sno_fluxes to 1, as is done
           ! in SnowHydrologyMod). However, if we're running with surface water enabled,
           ! then subgrid fluxes must also be enabled, so for now we're not bothering to
           ! explicitly check use_subgrid_fluxes here.
-          frac_sno_fluxes(c)=frac_sno_zzzz(c)
+          frac_sno_fluxes(c)=frac_sno_albedo(c)
 
        endif
 

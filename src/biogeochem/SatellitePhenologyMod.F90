@@ -322,7 +322,7 @@ contains
     !-----------------------------------------------------------------------
 
     associate(                                                           &
-         frac_sno_zzzz           => waterdiagnosticbulk_inst%frac_sno_zzzz_col   ,          & ! Input:  [real(r8) (:) ] fraction of ground covered by snow (0 to 1)       
+         frac_sno_albedo           => waterdiagnosticbulk_inst%frac_sno_albedo_col   ,          & ! Input:  [real(r8) (:) ] fraction of ground covered by snow (0 to 1)       
          snow_depth         => waterdiagnosticbulk_inst%snow_depth_col ,          & ! Input:  [real(r8) (:) ] snow height (m)                                                       
          tlai               => canopystate_inst%tlai_patch    ,          & ! Output: [real(r8) (:) ] one-sided leaf area index, no burying by snow 
          tsai               => canopystate_inst%tsai_patch    ,          & ! Output: [real(r8) (:) ] one-sided stem area index, no burying by snow
@@ -382,8 +382,8 @@ contains
 
          ! area weight by snow covered fraction
 
-         elai(p) = max(tlai(p)*(1.0_r8 - frac_sno_zzzz(c)) + tlai(p)*fb*frac_sno_zzzz(c), 0.0_r8)
-         esai(p) = max(tsai(p)*(1.0_r8 - frac_sno_zzzz(c)) + tsai(p)*fb*frac_sno_zzzz(c), 0.0_r8)
+         elai(p) = max(tlai(p)*(1.0_r8 - frac_sno_albedo(c)) + tlai(p)*fb*frac_sno_albedo(c), 0.0_r8)
+         esai(p) = max(tsai(p)*(1.0_r8 - frac_sno_albedo(c)) + tsai(p)*fb*frac_sno_albedo(c), 0.0_r8)
          if (elai(p) < 0.05_r8) elai(p) = 0._r8
          if (esai(p) < 0.05_r8) esai(p) = 0._r8
 

@@ -329,7 +329,7 @@ contains
          dz                  = col%dz(begc:endc,:), &
          int_snow            = b_waterstate_inst%int_snow_col(begc:endc), &
          swe_old             = b_waterdiagnostic_inst%swe_old_col(begc:endc,:), &
-         frac_sno_zzzz            = b_waterdiagnostic_inst%frac_sno_zzzz_col(begc:endc), &
+         frac_sno_albedo            = b_waterdiagnostic_inst%frac_sno_albedo_col(begc:endc), &
          frac_sno_fluxes        = b_waterdiagnostic_inst%frac_sno_fluxes_col(begc:endc), &
          snow_depth          = b_waterdiagnostic_inst%snow_depth_col(begc:endc))
 
@@ -355,7 +355,7 @@ contains
        scf_method, &
        dtime, lun_itype_col, urbpoi, snl, bifall, h2osno_total, h2osoi_ice, h2osoi_liq, &
        qflx_snow_grnd, qflx_snow_drain, &
-       dz, int_snow, swe_old, frac_sno_zzzz, frac_sno_fluxes, snow_depth)
+       dz, int_snow, swe_old, frac_sno_albedo, frac_sno_fluxes, snow_depth)
     !
     ! !DESCRIPTION:
     ! Update various snow-related diagnostic quantities to account for new snow
@@ -379,7 +379,7 @@ contains
     real(r8)                  , intent(inout) :: dz( bounds%begc: , -nlevsno+1: ) ! layer depth (m)
     real(r8)                  , intent(inout) :: int_snow( bounds%begc: )        ! integrated snowfall (mm H2O)
     real(r8)                  , intent(inout) :: swe_old( bounds%begc:, -nlevsno+1: )         ! snow water before update (mm H2O)
-    real(r8)                  , intent(inout) :: frac_sno_zzzz( bounds%begc: )        ! fraction of ground covered by snow (0 to 1)
+    real(r8)                  , intent(inout) :: frac_sno_albedo( bounds%begc: )        ! fraction of ground covered by snow (0 to 1)
     real(r8)                  , intent(inout) :: frac_sno_fluxes( bounds%begc: )    ! eff. fraction of ground covered by snow (0 to 1)
     real(r8)                  , intent(inout) :: snow_depth( bounds%begc: )      ! snow height (m)
     !
@@ -407,7 +407,7 @@ contains
     SHR_ASSERT_FL((ubound(dz, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(int_snow, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_ALL_FL((ubound(swe_old) == [bounds%endc, 0]), sourcefile, __LINE__)
-    SHR_ASSERT_FL((ubound(frac_sno_zzzz, 1) == bounds%endc), sourcefile, __LINE__)
+    SHR_ASSERT_FL((ubound(frac_sno_albedo, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(frac_sno_fluxes, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(snow_depth, 1) == bounds%endc), sourcefile, __LINE__)
 
@@ -455,7 +455,7 @@ contains
          bifall        = bifall(begc:endc), &
          ! Outputs
          snow_depth    = snow_depth(begc:endc), &
-         frac_sno_zzzz      = frac_sno_zzzz(begc:endc), &
+         frac_sno_albedo      = frac_sno_albedo(begc:endc), &
          frac_sno_fluxes  = frac_sno_fluxes(begc:endc))
 
     do fc = 1, num_c
@@ -471,7 +471,7 @@ contains
          ! Inputs
          newsnow      = newsnow(begc:endc), &
          h2osno_total = h2osno_total(begc:endc), &
-         frac_sno_zzzz     = frac_sno_zzzz(begc:endc), &
+         frac_sno_albedo     = frac_sno_albedo(begc:endc), &
          ! Outputs
          int_snow     = int_snow(begc:endc))
 
@@ -1066,7 +1066,7 @@ contains
          h2osno_no_layers = b_waterstate_inst%h2osno_no_layers_col(begc:endc), &
          ! Outputs
          int_snow         = b_waterstate_inst%int_snow_col(begc:endc), &
-         frac_sno_zzzz         = b_waterdiagnostic_inst%frac_sno_zzzz_col(begc:endc), &
+         frac_sno_albedo         = b_waterdiagnostic_inst%frac_sno_albedo_col(begc:endc), &
          snow_depth       = b_waterdiagnostic_inst%snow_depth_col(begc:endc))
          
     do i = water_inst%bulk_and_tracers_beg, water_inst%bulk_and_tracers_end
@@ -1255,7 +1255,7 @@ contains
        do fc = 1, num_snowc
           c = filter_snowc(fc)
           if (j >= snl(c)+1) then
-             ! need to scale dz by frac_sno_zzzz to convert to grid cell average depth
+             ! need to scale dz by frac_sno_albedo to convert to grid cell average depth
              vol_ice(c,j)      = min(1._r8, h2osoi_ice(c,j)/(dz(c,j)*frac_sno_fluxes(c)*denice))
              eff_porosity(c,j) = 1._r8 - vol_ice(c,j)
              vol_liq(c,j)      = min(eff_porosity(c,j),h2osoi_liq(c,j)/(dz(c,j)*frac_sno_fluxes(c)*denh2o))
@@ -1646,7 +1646,7 @@ contains
   subroutine BulkDiag_SnowWaterAccumulatedSnow(bounds, &
        num_snowc, filter_snowc, num_nosnowc, filter_nosnowc, &
        dtime, frac_sno_fluxes, qflx_dew_snow, qflx_dew_grnd, qflx_liq_grnd, h2osno_no_layers, &
-       int_snow, frac_sno_zzzz, snow_depth)
+       int_snow, frac_sno_albedo, snow_depth)
     !
     ! !DESCRIPTION:
     ! Update int_snow, and reset accumulated snow when no snow present
@@ -1666,7 +1666,7 @@ contains
     real(r8) , intent(in)    :: h2osno_no_layers( bounds%begc: ) ! snow that is not resolved into layers (kg/m2)
 
     real(r8) , intent(inout) :: int_snow( bounds%begc: )         ! integrated snowfall (mm H2O)
-    real(r8) , intent(inout) :: frac_sno_zzzz( bounds%begc: )         ! fraction of ground covered by snow (0 to 1)
+    real(r8) , intent(inout) :: frac_sno_albedo( bounds%begc: )         ! fraction of ground covered by snow (0 to 1)
     real(r8) , intent(inout) :: snow_depth( bounds%begc: )       ! snow height (m)
     !
     ! !LOCAL VARIABLES:
@@ -1681,7 +1681,7 @@ contains
     SHR_ASSERT_FL((ubound(qflx_liq_grnd, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(h2osno_no_layers, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(int_snow, 1) == bounds%endc), sourcefile, __LINE__)
-    SHR_ASSERT_FL((ubound(frac_sno_zzzz, 1) == bounds%endc), sourcefile, __LINE__)
+    SHR_ASSERT_FL((ubound(frac_sno_albedo, 1) == bounds%endc), sourcefile, __LINE__)
     SHR_ASSERT_FL((ubound(snow_depth, 1) == bounds%endc), sourcefile, __LINE__)
 
     do fc = 1, num_snowc
@@ -1697,7 +1697,7 @@ contains
        ! reset accumulated snow when no snow present
        if (h2osno_no_layers(c) <= 0._r8) then
           int_snow(c) = 0._r8
-          frac_sno_zzzz(c) = 0._r8
+          frac_sno_albedo(c) = 0._r8
           snow_depth(c) = 0._r8
        end if
     end do
@@ -2029,7 +2029,7 @@ contains
          mss_dst3         => aerosol_inst%mss_dst3_col           , & ! Output: [real(r8) (:,:) ] dust species 3 mass in snow (col,lyr) [kg]
          mss_dst4         => aerosol_inst%mss_dst4_col           , & ! Output: [real(r8) (:,:) ] dust species 4 mass in snow (col,lyr) [kg]
 
-         frac_sno_zzzz         => b_waterdiagnostic_inst%frac_sno_zzzz_col        , & ! Input:  [real(r8) (:)   ] fraction of ground covered by snow (0 to 1)
+         frac_sno_albedo         => b_waterdiagnostic_inst%frac_sno_albedo_col        , & ! Input:  [real(r8) (:)   ] fraction of ground covered by snow (0 to 1)
          frac_sno_fluxes     => b_waterdiagnostic_inst%frac_sno_fluxes_col    , & ! Input:  [real(r8) (:)   ] fraction of ground covered by snow (0 to 1)
          snow_depth       => b_waterdiagnostic_inst%snow_depth_col      , & ! Output: [real(r8) (:)   ] snow height (m)
          int_snow         => b_waterstate_inst%int_snow_col        , & ! Output:  [real(r8) (:)   ] integrated snowfall [mm]
@@ -2261,7 +2261,7 @@ contains
        end if
        if (h2osno_total(c) <= 0._r8) then
           snow_depth(c) = 0._r8
-          frac_sno_zzzz(c) = 0._r8
+          frac_sno_albedo(c) = 0._r8
           frac_sno_fluxes(c) = 0._r8
           int_snow(c) = 0._r8
        endif
@@ -2947,7 +2947,7 @@ contains
           cycle
        end if
 
-       ! LvK 9-JUN-2015: in CanopyHydrologyMod , snow_depth is scaled with frac_sno_zzzz
+       ! LvK 9-JUN-2015: in CanopyHydrologyMod , snow_depth is scaled with frac_sno_albedo
        ! Here we do not apply scaling to snow_depth, so inconsistent? TODO
 
        ! Special case: too little snow for snowpack existence
@@ -3034,7 +3034,7 @@ contains
     integer    :: i                                ! index of water tracer or bulk
     real(r8)   :: dtime                            ! land model time step (sec)
     real(r8)   :: h2osno_total(bounds%begc:bounds%endc)  ! total snow water (mm H2O)
-    real(r8)   :: rho_orig_bottom(bounds%begc:bounds%endc) ! partial density of ice in bottom snow layer, before updates (not scaled with frac_sno_zzzz) [kg/m3]
+    real(r8)   :: rho_orig_bottom(bounds%begc:bounds%endc) ! partial density of ice in bottom snow layer, before updates (not scaled with frac_sno_albedo) [kg/m3]
     real(r8)   :: frac_adjust(bounds%begc:bounds%endc) ! fraction of mass remaining after capping
     type(filter_col_type) :: snow_capping_filterc ! column filter: columns undergoing snow capping
 
@@ -3200,7 +3200,7 @@ contains
     real(r8) , intent(in) :: h2osoi_liq_bottom( bounds%begc: ) ! liquid water in bottom snow layer (kg/m2)
 
     type(filter_col_type) , intent(out)   :: snow_capping_filterc                     ! column filter: columns undergoing snow capping
-    real(r8)              , intent(inout) :: rho_orig_bottom( bounds%begc: )          ! partial density of ice in bottom snow layer, before updates (not scaled with frac_sno_zzzz) (kg/m3)
+    real(r8)              , intent(inout) :: rho_orig_bottom( bounds%begc: )          ! partial density of ice in bottom snow layer, before updates (not scaled with frac_sno_albedo) (kg/m3)
     real(r8)              , intent(inout) :: frac_adjust( bounds%begc: )              ! fraction of mass remaining after capping
     real(r8)              , intent(inout) :: qflx_snwcp_ice( bounds%begc: )           ! excess solid h2o due to snow capping (outgoing) (mm H2O /s)
     real(r8)              , intent(inout) :: qflx_snwcp_liq( bounds%begc: )           ! excess liquid h2o due to snow capping (outgoing) (mm H2O /s)
@@ -3519,7 +3519,7 @@ contains
     type(bounds_type)     , intent(in) :: bounds
     type(filter_col_type) , intent(in) :: snow_capping_filterc ! column filter: columns undergoing snow capping
 
-    real(r8) , intent(in)    :: rho_orig_bottom( bounds%begc: )   ! partial density of ice in bottom snow layer, before updates (not scaled with frac_sno_zzzz) (kg/m3)
+    real(r8) , intent(in)    :: rho_orig_bottom( bounds%begc: )   ! partial density of ice in bottom snow layer, before updates (not scaled with frac_sno_albedo) (kg/m3)
     real(r8) , intent(in)    :: h2osoi_ice_bottom( bounds%begc: ) ! ice lens in bottom snow layer (kg/m2)
     real(r8) , intent(in)    :: frac_adjust( bounds%begc: )       ! fraction of mass remaining after capping
     real(r8) , intent(inout) :: dz_bottom( bounds%begc: )         ! layer depth of bottom snow layer (m)

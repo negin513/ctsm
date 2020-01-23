@@ -300,7 +300,7 @@ contains
 
           h2osno_old              =>    waterbalance_inst%h2osno_old_col          , & ! Input:  [real(r8) (:)   ]  snow water (mm H2O) at previous time step
           frac_sno_fluxes            =>    waterdiagnosticbulk_inst%frac_sno_fluxes_col        , & ! Input:  [real(r8) (:)   ]  effective snow fraction                 
-          frac_sno_zzzz                =>    waterdiagnosticbulk_inst%frac_sno_zzzz_col            , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)
+          frac_sno_albedo                =>    waterdiagnosticbulk_inst%frac_sno_albedo_col            , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)
           snow_depth              =>    waterdiagnosticbulk_inst%snow_depth_col          , & ! Input:  [real(r8) (:)   ]  snow height (m)                         
           begwb                   =>    waterbalance_inst%begwb_col               , & ! Input:  [real(r8) (:)   ]  water mass begining of the time step    
           errh2o                  =>    waterbalance_inst%errh2o_col              , & ! Output: [real(r8) (:)   ]  water conservation error (mm H2O)       
@@ -686,8 +686,8 @@ contains
            if ( errseb_max_val > error_thresh ) then
               write(iulog,*)'clm model is stopping - error is greater than 1e-5 (W/m2)'
               write(iulog,*)'sabv           = ' ,sabv(indexp)
-              write(iulog,*)'sabg           = ' ,sabg(indexp), ((1._r8- frac_sno_zzzz(indexc))*sabg_soil(indexp) + &
-                   frac_sno_zzzz(indexc)*sabg_snow(indexp)),sabg_chk(indexp)
+              write(iulog,*)'sabg           = ' ,sabg(indexp), ((1._r8- frac_sno_albedo(indexc))*sabg_soil(indexp) + &
+                   frac_sno_albedo(indexc)*sabg_snow(indexp)),sabg_chk(indexp)
               write(iulog,*)'forc_tot      = '  ,forc_solad(indexg,1) + forc_solad(indexg,2) + &
                    forc_solai(indexg,1) + forc_solai(indexg,2)
 
