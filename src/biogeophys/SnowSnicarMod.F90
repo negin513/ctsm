@@ -898,7 +898,7 @@ contains
                      l_idx     = col%landunit(c_idx)
                      write(iulog,*) "column index: ", c_idx
                      write(iulog,*) "landunit type", lun%itype(l_idx)
-                     write(iulog,*) "frac_sno_fluxes: ", frac_sno_zzzz(c_idx)
+                     write(iulog,*) "frac_sno_fluxes: ", frac_sno_fluxes(c_idx)
                      call endrun(decomp_index=c_idx, clmlevel=namec, msg=errmsg(sourcefile, __LINE__))
                   else
                      flg_dover = 0
