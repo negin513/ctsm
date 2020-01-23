@@ -503,7 +503,7 @@ contains
          frac_h2osfc            => waterdiagnosticbulk_inst%frac_h2osfc_col              , & ! Input:  [real(r8) (:)   ]  fraction of surface water                                             
          fwet                   => waterdiagnosticbulk_inst%fwet_patch                   , & ! Input:  [real(r8) (:)   ]  fraction of canopy that is wet (0 to 1)                               
          fdry                   => waterdiagnosticbulk_inst%fdry_patch                   , & ! Input:  [real(r8) (:)   ]  fraction of foliage that is green and dry [-]                         
-         frac_sno_tmp               => waterdiagnosticbulk_inst%frac_sno_eff_col             , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)                           
+         frac_sno_zzzz_tmp               => waterdiagnosticbulk_inst%frac_sno_fluxes_col             , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)                           
          snow_depth             => waterdiagnosticbulk_inst%snow_depth_col               , & ! Input:  [real(r8) (:)   ]  snow height (m)                                                       
          qg_snow                => waterdiagnosticbulk_inst%qg_snow_col                  , & ! Input:  [real(r8) (:)   ]  specific humidity at snow surface [kg/kg]                             
          qg_soil                => waterdiagnosticbulk_inst%qg_soil_col                  , & ! Input:  [real(r8) (:)   ]  specific humidity at soil surface [kg/kg]                             
@@ -1044,8 +1044,8 @@ contains
                erre = efe(p) - efeold
             end if
             ! fractionate ground emitted longwave
-            lw_grnd=(frac_sno_tmp(c)*t_soisno(c,snl(c)+1)**4 &
-                 +(1._r8-frac_sno_tmp(c)-frac_h2osfc(c))*t_soisno(c,1)**4 &
+            lw_grnd=(frac_sno_zzzz_tmp(c)*t_soisno(c,snl(c)+1)**4 &
+                 +(1._r8-frac_sno_zzzz_tmp(c)-frac_h2osfc(c))*t_soisno(c,1)**4 &
                  +frac_h2osfc(c)*t_h2osfc(c)**4)
 
             dt_veg(p) = (sabv(p) + air(p) + bir(p)*t_veg(p)**4 + &
@@ -1179,8 +1179,8 @@ contains
 
          ! Energy balance check in canopy
 
-         lw_grnd=(frac_sno_tmp(c)*t_soisno(c,snl(c)+1)**4 &
-              +(1._r8-frac_sno_tmp(c)-frac_h2osfc(c))*t_soisno(c,1)**4 &
+         lw_grnd=(frac_sno_zzzz_tmp(c)*t_soisno(c,snl(c)+1)**4 &
+              +(1._r8-frac_sno_zzzz_tmp(c)-frac_h2osfc(c))*t_soisno(c,1)**4 &
               +frac_h2osfc(c)*t_h2osfc(c)**4)
 
          err(p) = sabv(p) + air(p) + bir(p)*tlbef(p)**3*(tlbef(p) + 4._r8*dt_veg(p)) &

@@ -299,8 +299,8 @@ contains
           forc_lwrad              =>    atm2lnd_inst%forc_lwrad_downscaled_col  , & ! Input:  [real(r8) (:)   ]  downward infrared (longwave) radiation (W/m**2)
 
           h2osno_old              =>    waterbalance_inst%h2osno_old_col          , & ! Input:  [real(r8) (:)   ]  snow water (mm H2O) at previous time step
-          frac_sno_eff            =>    waterdiagnosticbulk_inst%frac_sno_eff_col        , & ! Input:  [real(r8) (:)   ]  effective snow fraction                 
-          frac_sno                =>    waterdiagnosticbulk_inst%frac_sno_col            , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)
+          frac_sno_fluxes            =>    waterdiagnosticbulk_inst%frac_sno_fluxes_col        , & ! Input:  [real(r8) (:)   ]  effective snow fraction                 
+          frac_sno_zzzz                =>    waterdiagnosticbulk_inst%frac_sno_zzzz_col            , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)
           snow_depth              =>    waterdiagnosticbulk_inst%snow_depth_col          , & ! Input:  [real(r8) (:)   ]  snow height (m)                         
           begwb                   =>    waterbalance_inst%begwb_col               , & ! Input:  [real(r8) (:)   ]  water mass begining of the time step    
           errh2o                  =>    waterbalance_inst%errh2o_col              , & ! Output: [real(r8) (:)   ]  water conservation error (mm H2O)       
@@ -498,9 +498,9 @@ contains
 
                 if (lun%itype(l) == istdlak) then 
                    snow_sources(c) = qflx_snow_grnd_col(c) &
-                        + frac_sno_eff(c) * (qflx_liq_grnd_col(c) &
+                        + frac_sno_fluxes(c) * (qflx_liq_grnd_col(c) &
                         +  qflx_dew_snow(c) + qflx_dew_grnd(c) ) 
-                   snow_sinks(c)   = frac_sno_eff(c) * (qflx_sub_snow(c) + qflx_evap_grnd(c) ) &
+                   snow_sinks(c)   = frac_sno_fluxes(c) * (qflx_sub_snow(c) + qflx_evap_grnd(c) ) &
                         + qflx_snwcp_ice(c) + qflx_snwcp_liq(c)  &
                         + qflx_snwcp_discarded_ice(c) + qflx_snwcp_discarded_liq(c)  &
                         + qflx_snow_drain(c)  + qflx_sl_top_soil(c)
@@ -510,9 +510,9 @@ contains
                       lun%itype(l) == istcrop .or. lun%itype(l) == istwet .or. &
                       lun%itype(l) == istice_mec) then
                    snow_sources(c) = (qflx_snow_grnd_col(c) - qflx_snow_h2osfc(c) ) &
-                          + frac_sno_eff(c) * (qflx_liq_grnd_col(c) &
+                          + frac_sno_fluxes(c) * (qflx_liq_grnd_col(c) &
                           +  qflx_dew_snow(c) + qflx_dew_grnd(c) ) + qflx_h2osfc_to_ice(c)
-                   snow_sinks(c) = frac_sno_eff(c) * (qflx_sub_snow(c) + qflx_evap_grnd(c)) &
+                   snow_sinks(c) = frac_sno_fluxes(c) * (qflx_sub_snow(c) + qflx_evap_grnd(c)) &
                           + qflx_snwcp_ice(c) + qflx_snwcp_liq(c) &
                           + qflx_snwcp_discarded_ice(c) + qflx_snwcp_discarded_liq(c) &
                           + qflx_snow_drain(c) + qflx_sl_top_soil(c)
@@ -548,7 +548,7 @@ contains
                  write(iulog,*)'errh2osno          = ',errh2osno(indexc)
                  write(iulog,*)'snl                = ',col%snl(indexc)
                  write(iulog,*)'snow_depth         = ',snow_depth(indexc)
-                 write(iulog,*)'frac_sno_eff       = ',frac_sno_eff(indexc)
+                 write(iulog,*)'frac_sno_fluxes       = ',frac_sno_fluxes(indexc)
                  write(iulog,*)'h2osno             = ',h2osno_total(indexc)
                  write(iulog,*)'h2osno_old         = ',h2osno_old(indexc)
                  write(iulog,*)'snow_sources       = ',snow_sources(indexc)*dtime
@@ -686,8 +686,8 @@ contains
            if ( errseb_max_val > error_thresh ) then
               write(iulog,*)'clm model is stopping - error is greater than 1e-5 (W/m2)'
               write(iulog,*)'sabv           = ' ,sabv(indexp)
-              write(iulog,*)'sabg           = ' ,sabg(indexp), ((1._r8- frac_sno(indexc))*sabg_soil(indexp) + &
-                   frac_sno(indexc)*sabg_snow(indexp)),sabg_chk(indexp)
+              write(iulog,*)'sabg           = ' ,sabg(indexp), ((1._r8- frac_sno_zzzz(indexc))*sabg_soil(indexp) + &
+                   frac_sno_zzzz(indexc)*sabg_snow(indexp)),sabg_chk(indexp)
               write(iulog,*)'forc_tot      = '  ,forc_solad(indexg,1) + forc_solad(indexg,2) + &
                    forc_solai(indexg,1) + forc_solai(indexg,2)
 
