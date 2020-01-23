@@ -648,7 +648,7 @@ contains
          
          t_soisno     =>    temperature_inst%t_soisno_col    , & ! Input:  [real(r8) (:,:) ]  soil temperature (Kelvin)             
          
-         frac_sno_zzzz_tmp     =>    waterdiagnosticbulk_inst%frac_sno_fluxes_col , & ! Input:  [real(r8) (:)   ]  fractional snow covered area            
+         frac_sno_fluxes     =>    waterdiagnosticbulk_inst%frac_sno_fluxes_col , & ! Input:  [real(r8) (:)   ]  fractional snow covered area            
          h2osfc       =>    waterstatebulk_inst%h2osfc_col	     , & ! Input:  [real(r8) (:)   ]  surface (mm H2O)                        
          h2osno_no_layers => waterstatebulk_inst%h2osno_no_layers_col , & ! Input:  [real(r8) (:)   ]  snow not resolved into layers (mm H2O)
          h2osoi_liq   =>    waterstatebulk_inst%h2osoi_liq_col   , & ! Input:  [real(r8) (:,:) ]  liquid water (kg/m2)                  
@@ -717,7 +717,7 @@ contains
             ! Thermal conductivity of snow, which from Jordan (1991) pp. 18
             ! Only examine levels from snl(c)+1 -> 0 where snl(c) < 1
             if (snl(c)+1 < 1 .AND. (j >= snl(c)+1) .AND. (j <= 0)) then  
-               bw(c,j) = (h2osoi_ice(c,j)+h2osoi_liq(c,j))/(frac_sno_zzzz_tmp(c)*dz(c,j))
+               bw(c,j) = (h2osoi_ice(c,j)+h2osoi_liq(c,j))/(frac_sno_fluxes(c)*dz(c,j))
                thk(c,j) = tkair + (7.75e-5_r8 *bw(c,j) + 1.105e-6_r8*bw(c,j)*bw(c,j))*(tkice-tkair)
             end if
 
@@ -801,8 +801,8 @@ contains
          do fc = 1,num_nolakec
             c = filter_nolakec(fc)
             if (snl(c)+1 < 1 .and. j >= snl(c)+1) then
-               if (frac_sno_zzzz_tmp(c) > 0._r8) then
-                  cv(c,j) = max(thin_sfclayer,(cpliq*h2osoi_liq(c,j) + cpice*h2osoi_ice(c,j))/frac_sno_zzzz_tmp(c))
+               if (frac_sno_fluxes(c) > 0._r8) then
+                  cv(c,j) = max(thin_sfclayer,(cpliq*h2osoi_liq(c,j) + cpice*h2osoi_ice(c,j))/frac_sno_fluxes(c))
                else
                   cv(c,j) = thin_sfclayer
                endif
@@ -865,7 +865,7 @@ contains
          snl                       =>    col%snl                               , & ! Input:  [integer  (:)   ] number of snow layers                    
          dz                        =>    col%dz                                , & ! Input:  [real(r8) (:,:) ] layer thickness (m)                    
          
-         frac_sno_zzzz_tmp                  =>    waterdiagnosticbulk_inst%frac_sno_fluxes_col      , & ! Input:  [real(r8) (:)   ] fraction of ground covered by snow (0 to 1)
+         frac_sno_fluxes                  =>    waterdiagnosticbulk_inst%frac_sno_fluxes_col      , & ! Input:  [real(r8) (:)   ] fraction of ground covered by snow (0 to 1)
          frac_h2osfc               =>    waterdiagnosticbulk_inst%frac_h2osfc_col       , & ! Input:  [real(r8) (:)   ] fraction of ground covered by surface water (0 to 1)
          h2osno_no_layers          =>    waterstatebulk_inst%h2osno_no_layers_col  , & ! Output: [real(r8) (:)   ] snow that is not resolved into layers (mm H2O)
          h2osoi_ice                =>    waterstatebulk_inst%h2osoi_ice_col        , & ! Input:  [real(r8) (:,:) ] ice lens (kg/m2) (new)                 
@@ -917,7 +917,7 @@ contains
             xm(c) = hm(c)*dtime/hfus  
             temp1 = h2osfc(c) + xm(c)
 
-            z_avg=frac_sno_zzzz_tmp(c)*snow_depth(c)
+            z_avg=frac_sno_fluxes(c)*snow_depth(c)
             if (z_avg > 0._r8) then 
                rho_avg=min(800._r8,h2osno_total(c)/z_avg)
             else
@@ -944,8 +944,8 @@ contains
 
 
                ! update snow depth
-               if (frac_sno_zzzz_tmp(c) > 0 .and. snl(c) < 0) then 
-                  snow_depth(c)=h2osno_total(c)/(rho_avg*frac_sno_zzzz_tmp(c))
+               if (frac_sno_fluxes(c) > 0 .and. snl(c) < 0) then 
+                  snow_depth(c)=h2osno_total(c)/(rho_avg*frac_sno_fluxes(c))
                else
                   snow_depth(c)=h2osno_total(c)/denice
                endif
@@ -957,9 +957,9 @@ contains
                   eflx_h2osfc_to_snow_col(c) = 0.
                else
                   if (snl(c) == -1)then
-                     c1=frac_sno_zzzz_tmp(c)*(dtime/fact(c,0) - dhsdT(c)*dtime)
+                     c1=frac_sno_fluxes(c)*(dtime/fact(c,0) - dhsdT(c)*dtime)
                   else
-                     c1=frac_sno_zzzz_tmp(c)/fact(c,0)*dtime
+                     c1=frac_sno_fluxes(c)/fact(c,0)*dtime
                   end if
                   if ( frac_h2osfc(c) /= 0.0_r8 )then
                      c2=(-cpliq*xm(c) - frac_h2osfc(c)*dhsdT(c)*dtime)
@@ -1002,7 +1002,7 @@ contains
                   !initialize for next time step
                   t_soisno(c,0) = t_h2osfc(c)
                else if (snl(c) == -1) then
-                  c1=frac_sno_zzzz_tmp(c)*(dtime/fact(c,0) - dhsdT(c)*dtime)
+                  c1=frac_sno_fluxes(c)*(dtime/fact(c,0) - dhsdT(c)*dtime)
                   if ( frac_h2osfc(c) /= 0.0_r8 )then
                      c2=frac_h2osfc(c)*(c_h2osfc(c) - dtime*dhsdT(c))
 
@@ -1014,7 +1014,7 @@ contains
                   t_h2osfc(c) = t_soisno(c,0)
 
                else
-                  c1=frac_sno_zzzz_tmp(c)/fact(c,0)*dtime
+                  c1=frac_sno_fluxes(c)/fact(c,0)*dtime
                   if ( frac_h2osfc(c) /= 0.0_r8 )then
                      c2=frac_h2osfc(c)*(c_h2osfc(c) - dtime*dhsdT(c))
                   else
@@ -1029,8 +1029,8 @@ contains
                h2osfc(c) = 0._r8
 
                ! update snow depth
-               if (frac_sno_zzzz_tmp(c) > 0 .and. snl(c) < 0) then 
-                  snow_depth(c)=h2osno_total(c)/(rho_avg*frac_sno_zzzz_tmp(c))
+               if (frac_sno_fluxes(c) > 0 .and. snl(c) < 0) then 
+                  snow_depth(c)=h2osno_total(c)/(rho_avg*frac_sno_fluxes(c))
                else
                   snow_depth(c)=h2osno_total(c)/denice
                endif
