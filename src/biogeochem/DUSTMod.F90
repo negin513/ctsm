@@ -323,6 +323,7 @@ contains
             else
                lnd_frc_mbl(p) = 0.0_r8
             endif
+            ! Eventhough this is not related to albedo this uses frac_sno_albedo.
             lnd_frc_mbl(p) = lnd_frc_mbl(p) * (1.0_r8 - frac_sno(c))
          else          
             lnd_frc_mbl(p) = 0.0_r8   
