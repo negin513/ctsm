@@ -2464,7 +2464,7 @@ contains
     associate( &
          t_soisno   => temperature_inst%t_soisno_col    , & ! Output: [real(r8) (:,:) ] soil temperature (Kelvin)
 
-         frac_sno   => b_waterdiagnostic_inst%frac_sno_eff_col , & ! Output: [real(r8) (:)   ] fraction of ground covered by snow (0 to 1)
+         frac_sno_tmp   => b_waterdiagnostic_inst%frac_sno_eff_col , & ! Output: [real(r8) (:)   ] fraction of ground covered by snow (0 to 1)
          snw_rds    => b_waterdiagnostic_inst%snw_rds_col      , & ! Output: [real(r8) (:,:) ] effective snow grain radius (col,lyr) [microns, m^-6]
 
          mss_bcphi  => aerosol_inst%mss_bcphi_col       , & ! Output: [real(r8) (:,:) ] hydrophilic BC mass in snow (col,lyr) [kg]
@@ -2523,7 +2523,7 @@ contains
              if (is_lake) then
                 dzsno(c,j) = dz(c,j+snl(c))
              else
-                dzsno(c,j) = frac_sno(c)*dz(c,j+snl(c))
+                dzsno(c,j) = frac_sno_tmp(c)*dz(c,j+snl(c))
              end if
 
              do wi = water_inst%bulk_and_tracers_beg, water_inst%bulk_and_tracers_end
@@ -2704,7 +2704,7 @@ contains
              if (is_lake) then
                 dz(c,j) = dzsno(c,j-snl(c))
              else
-                dz(c,j) = dzsno(c,j-snl(c))/frac_sno(c)
+                dz(c,j) = dzsno(c,j-snl(c))/frac_sno_tmp(c)
              end if
 
              do wi = water_inst%bulk_and_tracers_beg, water_inst%bulk_and_tracers_end
