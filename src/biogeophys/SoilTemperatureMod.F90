@@ -80,10 +80,6 @@ module SoilTemperatureMod
   public :: SetMatrix                           ! Sets up the matrix for the numerical solution of temperature for snow/standing-water/soil
   public :: AssembleMatrixFromSubmatrices       ! Assemble the full matrix from submatrices.
   public :: SetMatrix_Snow                      ! Set up the matrix entries corresponding to snow layers for Urban+Non-Urban columns
-  public :: SetMatrix_SnowUrban                 ! Set up the matrix entries corresponding to snow layers for Urban column
-  public :: SetMatrix_SnowUrbanNonRoad          ! Set up the matrix entries corresponding to snow layers for Urban column that are sunwall, shadewall, and roof columns
-  public :: SetMatrix_SnowUrbanRoad             ! Set up the matrix entries corresponding to snow layers for Urban column that are pervious, and impervious columns
-  public :: SetMatrix_SnowNonUrban              ! Set up the matrix entries corresponding to snow layers for Non-Urban column
   public :: SetMatrix_Snow_Soil                 ! Set up the matrix entries corresponding to snow-soil interaction
   public :: SetMatrix_Snow_SoilUrban            ! Set up the matrix entries corresponding to snow-soil interaction for Urban column
   public :: SetMatrix_Snow_SoilUrbanNonRoad     ! Set up the matrix entries corresponding to snow-soil interaction for Urban column that are sunwall, shadewall, and roof columns
@@ -3201,20 +3197,8 @@ contains
       ! Initialize
       bmatrix_snow(begc:endc, :, :) = 0.0_r8
 
-      !call SetMatrix_SnowUrban(bounds, num_nolakec, filter_nolakec, nband, &
-      !     dhsdT( begc:endc ),                                             &
-      !     tk( begc:endc, -nlevsno+1: ),                                   &
-      !     fact( begc:endc, -nlevsno+1: ),                                 &
-      !     bmatrix_snow( begc:endc, 1:, -nlevsno: ))
-
-      !call SetMatrix_SnowNonUrban(bounds, num_nolakec, filter_nolakec, nband, &
-      !     dhsdT( begc:endc ),                                                &
-      !     tk( begc:endc, -nlevsno+1: ),                                      &
-      !     fact( begc:endc, -nlevsno+1: ),                                    &
-      !     bmatrix_snow( begc:endc, 1:, -nlevsno: ))
-
       !
-      ! all columns loop ---------------------------------------------------------
+      ! all columns loop ------------------------------------------------------------
       !
       do j = -nlevsno+1,0
          do fc = 1,num_nolakec
@@ -3222,7 +3206,7 @@ contains
             l = col%landunit(c)
             ! urban columns ---------------------------------------------------------
             if (lun%urbpoi(l)) then
-               ! urban non-road columns ---------------------------------------------------------
+               ! urban non-road columns ---------------------------------------------
                if ((col%itype(c) == icol_sunwall .or. col%itype(c) == icol_shadewall &
                     .or. col%itype(c) == icol_roof)) then
                   if (j >= col%snl(c)+1) then
@@ -3243,7 +3227,7 @@ contains
                         end if
                      end if
                   end if
-               ! urban non-road columns ---------------------------------------------------------
+               ! urban non-road columns --------------------------------------------
                else if (col%itype(c) == icol_road_imperv .or. col%itype(c) == icol_road_perv) then
                         if (j >= col%snl(c)+1) then
                            if (j == col%snl(c)+1) then
@@ -3288,295 +3272,9 @@ contains
          enddo
       end do
 
-
     end associate
 
   end subroutine SetMatrix_Snow
-
-  !-----------------------------------------------------------------------
-  subroutine SetMatrix_SnowUrban(bounds, num_nolakec, filter_nolakec, nband, &
-       dhsdT, tk, fact, bmatrix_snow)
-
-    !
-    ! !DESCRIPTION:
-    ! Setup the matrix entries corresponding to internal snow layers for
-    ! urban soil columns
-    !
-    ! !USES:
-    use clm_varcon     , only : cnfac
-    use column_varcon  , only : icol_roof, icol_sunwall, icol_shadewall
-    use clm_varpar     , only : nlevsno, nlevgrnd, nlevurb
-    !
-    ! !ARGUMENTS:
-    implicit none
-    type(bounds_type), intent(in) :: bounds                                 ! bounds
-    integer , intent(in)  :: num_nolakec                                    ! number of column non-lake points in column filter
-    integer , intent(in)  :: filter_nolakec(:)                              ! column filter for non-lake points
-    integer , intent(in)  :: nband                                          ! number of bands of the tridigonal matrix
-    real(r8), intent(in)  :: dhsdT(bounds%begc: )                           ! temperature derivative of "hs" [col]
-    real(r8), intent(in)  :: tk(bounds%begc: ,-nlevsno+1: )                 ! thermal conductivity [W/(m K)]
-    real(r8), intent(in)  :: fact( bounds%begc: , -nlevsno+1: )             ! used in computing tridiagonal matrix [col, lev]
-    real(r8), intent(inout) :: bmatrix_snow(bounds%begc: , 1:, -nlevsno: )  ! matrix enteries
-    !-----------------------------------------------------------------------
-
-    ! Enforce expected array sizes
-    SHR_ASSERT_ALL_FL((ubound(dhsdT)          == (/bounds%endc/)),                  sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(tk)             == (/bounds%endc, nlevgrnd/)),        sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(fact)           == (/bounds%endc, nlevgrnd/)),        sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(bmatrix_snow)   == (/bounds%endc, nband, -1/)), sourcefile, __LINE__)
-
-    associate(& 
-         begc =>    bounds%begc                   , & ! Input:  [integer ] beginning column index
-         endc =>    bounds%endc                     & ! Input:  [integer ] ending column index
-         )
-
-      call SetMatrix_SnowUrbanNonRoad(bounds, num_nolakec, filter_nolakec, nband, &
-           dhsdT( begc:endc ),                                                    &
-           tk( begc:endc, -nlevsno+1: ),                                          &
-           fact( begc:endc, -nlevsno+1: ),                                        &
-           bmatrix_snow( begc:endc, 1:, -nlevsno: ))
-
-      call SetMatrix_SnowUrbanRoad(bounds, num_nolakec, filter_nolakec, nband, &
-           dhsdT( begc:endc ),                                                 &
-           tk( begc:endc, -nlevsno+1: ),                                       &
-           fact( begc:endc, -nlevsno+1: ),                                     &
-           bmatrix_snow( begc:endc, 1:, -nlevsno: ))
-
-    end associate
-
-  end subroutine SetMatrix_SnowUrban
-
-  !-----------------------------------------------------------------------
-  subroutine SetMatrix_SnowUrbanNonRoad(bounds, num_nolakec, filter_nolakec, nband, &
-       dhsdT, tk, fact, bmatrix_snow)
-
-    !
-    ! !DESCRIPTION:
-    ! Setup the matrix entries corresponding to internal snow layers for
-    ! urban sunwall/shadewall/roof columns
-    !
-    ! !USES:
-    use clm_varcon     , only : cnfac
-    use column_varcon  , only : icol_roof, icol_sunwall, icol_shadewall
-    use clm_varpar     , only : nlevsno, nlevgrnd, nlevurb
-    !
-    ! !ARGUMENTS:
-    implicit none
-    type(bounds_type), intent(in) :: bounds                                 ! bounds
-    integer , intent(in)  :: num_nolakec                                    ! number of column non-lake points in column filter
-    integer , intent(in)  :: filter_nolakec(:)                              ! column filter for non-lake points
-    integer , intent(in)  :: nband                                          ! number of bands of the tridigonal matrix
-    real(r8), intent(in)  :: dhsdT(bounds%begc: )                           ! temperature derivative of "hs" [col]
-    real(r8), intent(in)  :: tk(bounds%begc: ,-nlevsno+1: )                 ! thermal conductivity [W/(m K)]
-    real(r8), intent(in)  :: fact( bounds%begc: , -nlevsno+1: )             ! used in computing tridiagonal matrix [col, lev]
-    real(r8), intent(inout) :: bmatrix_snow(bounds%begc: , 1:, -nlevsno: )  ! matrix enteries
-    !
-    ! !LOCAL VARIABLES:
-    integer  :: j,c,l                                                       ! indices
-    integer  :: fc                                                          ! lake filtered column indices
-    real(r8) :: dzm                                                         ! used in computing tridiagonal matrix
-    real(r8) :: dzp                                                         ! used in computing tridiagonal matrix
-    !-----------------------------------------------------------------------
-
-    ! Enforce expected array sizes
-    SHR_ASSERT_ALL_FL((ubound(dhsdT)          == (/bounds%endc/)),            sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(tk)             == (/bounds%endc, nlevgrnd/)),  sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(fact)           == (/bounds%endc, nlevgrnd/)),  sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(bmatrix_snow)   == (/bounds%endc, nband, -1/)), sourcefile, __LINE__)
-
-    associate(& 
-         z  => col%z  & ! Input:  [real(r8) (:,:)]  layer thickness (m)
-         )
-
-      !
-      ! urban non-road columns ---------------------------------------------------------
-      !
-      do j = -nlevsno+1,0
-         do fc = 1,num_nolakec
-            c = filter_nolakec(fc)
-            l = col%landunit(c)
-            if (lun%urbpoi(l)) then
-               if ((col%itype(c) == icol_sunwall .or. col%itype(c) == icol_shadewall &
-                    .or. col%itype(c) == icol_roof)) then
-                  if (j >= col%snl(c)+1) then
-                     if (j == col%snl(c)+1) then
-                        dzp     = z(c,j+1)-z(c,j)
-                        bmatrix_snow(c,4,j-1) = 0._r8
-                        bmatrix_snow(c,3,j-1) = 1._r8+(1._r8-cnfac)*fact(c,j)*tk(c,j)/dzp-fact(c,j)*dhsdT(c)
-                        if ( j /= 0) then
-                           bmatrix_snow(c,2,j-1) =  -(1._r8-cnfac)*fact(c,j)*tk(c,j)/dzp
-                        end if
-                     else if (j <= nlevurb-1) then
-                        dzm     = (z(c,j)-z(c,j-1))
-                        dzp     = (z(c,j+1)-z(c,j))
-                        bmatrix_snow(c,4,j-1) =   - (1._r8-cnfac)*fact(c,j)* tk(c,j-1)/dzm
-                        bmatrix_snow(c,3,j-1) = 1._r8+ (1._r8-cnfac)*fact(c,j)*(tk(c,j)/dzp + tk(c,j-1)/dzm)
-                        if (j /= 0) then
-                           bmatrix_snow(c,2,j-1) =   - (1._r8-cnfac)*fact(c,j)* tk(c,j)/dzp
-                        end if
-                     end if
-                  end if
-               end if
-            end if
-         enddo
-      end do
-
-    end associate
-
-  end subroutine SetMatrix_SnowUrbanNonRoad
-
-  !-----------------------------------------------------------------------
-  subroutine SetMatrix_SnowUrbanRoad(bounds, num_nolakec, filter_nolakec, nband, &
-       dhsdT, tk, fact, bmatrix_snow)
-
-    !
-    ! !DESCRIPTION:
-    ! Setup the matrix entries corresponding to internal snow layers for
-    ! urban road (impervious + pervious) columns
-    !
-    ! !USES:
-    use clm_varcon     , only : cnfac
-    use column_varcon  , only : icol_road_perv, icol_road_imperv
-    use clm_varpar     , only : nlevsno, nlevgrnd, nlevurb
-    !
-    ! !ARGUMENTS:
-    implicit none
-    type(bounds_type), intent(in) :: bounds                                 ! bounds
-    integer , intent(in)  :: num_nolakec                                    ! number of column non-lake points in column filter
-    integer , intent(in)  :: filter_nolakec(:)                              ! column filter for non-lake points
-    integer , intent(in)  :: nband                                          ! number of bands of the tridigonal matrix
-    real(r8), intent(in)  :: dhsdT(bounds%begc: )                           ! temperature derivative of "hs" [col]
-    real(r8), intent(in)  :: tk(bounds%begc: ,-nlevsno+1: )                 ! thermal conductivity [W/(m K)]
-    real(r8), intent(in)  :: fact( bounds%begc: , -nlevsno+1: )             ! used in computing tridiagonal matrix [col, lev]
-    real(r8), intent(inout) :: bmatrix_snow(bounds%begc: , 1:, -nlevsno: )  ! matrix enteries
-    !
-    ! !LOCAL VARIABLES:
-    integer  :: j,c,l                                                       ! indices
-    integer  :: fc                                                          ! lake filtered column indices
-    real(r8) :: dzm                                                         ! used in computing tridiagonal matrix
-    real(r8) :: dzp                                                         ! used in computing tridiagonal matrix
-    !-----------------------------------------------------------------------
-
-    ! Enforce expected array sizes
-    SHR_ASSERT_ALL_FL((ubound(dhsdT)          == (/bounds%endc/)),            sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(tk)             == (/bounds%endc, nlevgrnd/)),  sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(fact)           == (/bounds%endc, nlevgrnd/)),  sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(bmatrix_snow)   == (/bounds%endc, nband, -1/)), sourcefile, __LINE__)
-
-    associate(& 
-         z => col%z & ! Input:  [real(r8) (:,:)]  layer thickness (m)
-         )
-
-      !
-      ! urban road columns -------------------------------------------------------------
-      !
-      do j = -nlevsno+1,0
-         do fc = 1,num_nolakec
-            c = filter_nolakec(fc)
-            l = col%landunit(c)
-            if (lun%urbpoi(l)) then
-               if (col%itype(c) == icol_road_imperv .or. col%itype(c) == icol_road_perv) then
-                  if (j >= col%snl(c)+1) then
-                     if (j == col%snl(c)+1) then
-                        dzp     = z(c,j+1)-z(c,j)
-                        bmatrix_snow(c,4,j-1) = 0._r8
-                        bmatrix_snow(c,3,j-1) = 1._r8+(1._r8-cnfac)*fact(c,j)*tk(c,j)/dzp-fact(c,j)*dhsdT(c)
-                        if ( j /= 0) then
-                           bmatrix_snow(c,2,j-1) =  -(1._r8-cnfac)*fact(c,j)*tk(c,j)/dzp
-                        end if
-                     else if (j <= nlevgrnd-1) then
-                        dzm     = (z(c,j)-z(c,j-1))
-                        dzp     = (z(c,j+1)-z(c,j))
-                        bmatrix_snow(c,4,j-1) =   - (1._r8-cnfac)*fact(c,j)* tk(c,j-1)/dzm
-                        bmatrix_snow(c,3,j-1) = 1._r8+ (1._r8-cnfac)*fact(c,j)*(tk(c,j)/dzp + tk(c,j-1)/dzm)
-                        if ( j /= 0) then
-                           bmatrix_snow(c,2,j-1) =   - (1._r8-cnfac)*fact(c,j)* tk(c,j)/dzp
-                        end if
-                     end if
-                  end if
-               end if
-            end if
-         enddo
-      end do
-
-    end associate
-
-  end subroutine SetMatrix_SnowUrbanRoad
-
-  !-----------------------------------------------------------------------
-  subroutine SetMatrix_SnowNonUrban(bounds, num_nolakec, filter_nolakec, nband, &
-       dhsdT, tk, fact, bmatrix_snow)
-
-    !
-    ! !DESCRIPTION:
-    ! Setup the matrix entries corresponding to internal snow layers for non-urban columns
-    !
-    ! !USES:
-    use clm_varcon     , only : cnfac
-    use column_varcon  , only : icol_roof, icol_sunwall, icol_shadewall
-    use clm_varpar     , only : nlevsno, nlevgrnd, nlevurb
-    !
-    ! !ARGUMENTS:
-    implicit none
-    type(bounds_type), intent(in) :: bounds                                 ! bounds
-    integer , intent(in)  :: num_nolakec                                    ! number of column non-lake points in column filter
-    integer , intent(in)  :: filter_nolakec(:)                              ! column filter for non-lake points
-    integer , intent(in)  :: nband                                          ! number of bands of the tridigonal matrix
-    real(r8), intent(in)  :: dhsdT(bounds%begc: )                           ! temperature derivative of "hs" [col]
-    real(r8), intent(in)  :: tk(bounds%begc: ,-nlevsno+1: )                 ! thermal conductivity [W/(m K)]
-    real(r8), intent(in)  :: fact( bounds%begc: , -nlevsno+1: )             ! used in computing tridiagonal matrix [col, lev]
-    real(r8), intent(inout) :: bmatrix_snow(bounds%begc: , 1:, -nlevsno: )  ! matrix enteries
-    !
-    ! !LOCAL VARIABLES:
-    integer  :: j,c,l                                                       ! indices
-    integer  :: fc                                                          ! lake filtered column indices
-    real(r8) :: dzm                                                         ! used in computing tridiagonal matrix
-    real(r8) :: dzp                                                         ! used in computing tridiagonal matrix
-    !-----------------------------------------------------------------------
-
-    ! Enforce expected array sizes
-    SHR_ASSERT_ALL_FL((ubound(dhsdT)          == (/bounds%endc/)),            sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(tk)             == (/bounds%endc, nlevgrnd/)),  sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(fact)           == (/bounds%endc, nlevgrnd/)),  sourcefile, __LINE__)
-    SHR_ASSERT_ALL_FL((ubound(bmatrix_snow)   == (/bounds%endc, nband, -1/)), sourcefile, __LINE__)
-
-    associate(& 
-         z => col%z  & ! Input:  [real(r8) (:,:)]  layer thickness (m)
-         )
-
-      !
-      ! non-urban landunits ------------------------------------------------------------
-      !
-      do j = -nlevsno+1,0
-         do fc = 1,num_nolakec
-            c = filter_nolakec(fc)
-            l = col%landunit(c)
-            if (.not. lun%urbpoi(l)) then
-               if (j >= col%snl(c)+1) then
-                  if (j == col%snl(c)+1) then
-                     dzp     = z(c,j+1)-z(c,j)
-                     bmatrix_snow(c,4,j-1) = 0._r8
-                     bmatrix_snow(c,3,j-1) = 1._r8+(1._r8-cnfac)*fact(c,j)*tk(c,j)/dzp-fact(c,j)*dhsdT(c)
-                     if ( j /= 0) then
-                        bmatrix_snow(c,2,j-1) =  -(1._r8-cnfac)*fact(c,j)*tk(c,j)/dzp
-                     end if
-                  else if (j <= nlevgrnd-1) then
-                     dzm     = (z(c,j)-z(c,j-1))
-                     dzp     = (z(c,j+1)-z(c,j))
-                     bmatrix_snow(c,4,j-1) =   - (1._r8-cnfac)*fact(c,j)* tk(c,j-1)/dzm
-                     bmatrix_snow(c,3,j-1) = 1._r8+ (1._r8-cnfac)*fact(c,j)*(tk(c,j)/dzp + tk(c,j-1)/dzm)
-                     if ( j /= 0) then
-                        bmatrix_snow(c,2,j-1) =   - (1._r8-cnfac)*fact(c,j)* tk(c,j)/dzp
-                     end if
-                  end if
-               end if
-            end if
-         enddo
-      end do
-
-    end associate
-
-  end subroutine SetMatrix_SnowNonUrban
 
   !-----------------------------------------------------------------------
   subroutine SetMatrix_Snow_Soil(bounds, num_nolakec, filter_nolakec, nband, &
