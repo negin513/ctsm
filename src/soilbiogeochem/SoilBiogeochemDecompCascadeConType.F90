@@ -8,15 +8,19 @@ module SoilBiogeochemDecompCascadeConType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use abortutils     , only : endrun
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use clm_varpar     , only : ndecomp_cascade_transitions, ndecomp_pools
+  use clm_varpar     , only : ndecomp_cascade_transitions, ndecomp_pools, nlevdecomp
   use clm_varcon     , only : ispval
+  use SparseMatrixMultiplyMod, only : sparse_matrix_type, diag_matrix_type, vector_type
+  use clm_varctl     , only : iulog
   !
   implicit none
+
   private
   !
   ! !PUBLIC MEMBER FUNCTIONS:
   public :: decomp_cascade_par_init          ! Initialize the parameters
   public :: init_decomp_cascade_constants    ! Initialize the constants
+  public :: InitSoilTransfer                 ! Initialize soil transfer (for soil matrix)
   !
   type, public :: decomp_cascade_type
      !-- properties of each pathway along decomposition cascade 
@@ -41,6 +45,9 @@ module SoilBiogeochemDecompCascadeConType
      logical           , pointer  :: is_cellulose(:)                   ! TRUE => pool is cellulose
      logical           , pointer  :: is_lignin(:)                      ! TRUE => pool is lignin
      real(r8)          , pointer  :: spinup_factor(:)                  ! factor by which to scale AD and relevant processes by
+
+     ! Matrix data
+
   end type decomp_cascade_type
 
   integer, public, parameter :: i_atm = 0                              ! for terminal pools (i.e. 100% respiration) (only used for CN not for BGC)
@@ -48,6 +55,7 @@ module SoilBiogeochemDecompCascadeConType
   integer, public, parameter :: century_decomp = 1                     ! CENTURY decomposition method type
   integer, public, parameter :: mimics_decomp = 2                      ! MIMICS decomposition method type
   integer, public            :: decomp_method  = ispval                ! Type of decomposition to use
+  logical, public, parameter :: use_soil_matrixcn = .false.            ! true => use cn matrix solution for soil BGC
   type(decomp_cascade_type), public :: decomp_cascade_con
   !------------------------------------------------------------------------
 
@@ -55,7 +63,7 @@ contains
 
   !------------------------------------------------------------------------
   subroutine decomp_cascade_par_init( NLFilename )
-    use clm_varctl         , only : use_fates, use_cn, use_fates_sp
+    use clm_varctl         , only : use_cn, use_fates_bgc
     use clm_varpar         , only : ndecomp_pools_max
     use spmdMod            , only : masterproc, mpicom
     use clm_nlUtilsMod     , only : find_nlgroup_name
@@ -102,9 +110,9 @@ contains
        if ( decomp_method == no_soil_decomp )then
           call endrun('When running with BGC an active soil_decomp_method must be used')
        end if
-    else if ( use_fates ) then
-       if ( .not. use_fates_sp .and. (decomp_method == no_soil_decomp) )then
-          call endrun('When running with FATES and without FATES-SP an active soil_decomp_method must be used')
+    else if ( use_fates_bgc ) then
+       if ( decomp_method == no_soil_decomp )then
+          call endrun('When running with FATES and without FATES-SP, an active soil_decomp_method must be used')
        end if
     else
        if ( decomp_method /= no_soil_decomp )then
@@ -120,7 +128,7 @@ contains
        ! ndecomp_pools would get the value of i_pas_som or i_cwd and
        ! ndecomp_cascade_transitions would get the value of i_s3s1 or i_cwdl3
        ! depending on how use_fates is set.
-       if ( use_fates ) then
+       if ( use_fates_bgc ) then
           if (decomp_method == century_decomp) then
              ndecomp_pools = 6
              ndecomp_cascade_transitions = 8
@@ -145,6 +153,7 @@ contains
        ndecomp_cascade_transitions = 7
        ndecomp_pools_max           = 8
     end if
+    ! Set ndecomp_pools_vr needed for Matrix solution
 
   end subroutine decomp_cascade_par_init
 
@@ -187,6 +196,10 @@ contains
        allocate(decomp_cascade_con%is_cellulose(ibeg:ndecomp_pools))
        allocate(decomp_cascade_con%is_lignin(ibeg:ndecomp_pools))
        allocate(decomp_cascade_con%spinup_factor(1:ndecomp_pools))
+
+       ! Allocate soil matrix data
+       if(use_soil_matrixcn)then
+       end if
    
        !-- properties of each pathway along decomposition cascade 
        decomp_cascade_con%cascade_step_name(1:ndecomp_cascade_transitions) = ''
@@ -212,6 +225,25 @@ contains
        decomp_cascade_con%spinup_factor(1:ndecomp_pools)                     = nan
     end if
 
+    ! Soil matrix sizes
+    if(use_soil_matrixcn)then
+    else
+       ! Set to missing value if not used
+    end if
   end subroutine init_decomp_cascade_constants
+
+  !------------------------------------------------------------------------
+  subroutine InitSoilTransfer()
+    !
+    ! !DESCRIPTION:
+    ! Initialize sparse matrix variables and index. Count possible non-zero entries and record their x and y in the matrix.
+    ! Collect those non-zero entry information, and save them into the list.
+    !------------------------------------------------------------------------
+    ! !USES:
+    use SparseMatrixMultiplyMod, only : sparse_matrix_type, diag_matrix_type, vector_type
+    ! !LOGAL VARIABLES:
+    integer i,j,k,m,n
+  
+  end subroutine InitSoilTransfer
 
 end module SoilBiogeochemDecompCascadeConType
