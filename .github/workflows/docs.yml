@@ -1,0 +1,52 @@
+name: Build and Publish CTSM Docs
+
+on:
+  push:
+    branches: 
+      - master # ctsm main is named master!
+        
+  pull_request:
+    branches:
+      - master 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x 
+    - name: Install Python dependencies
+      run: |
+        sudo apt-get install python3-pip
+        PATH="${PATH}:${HOME}/.local/bin"
+    - name: Build documentation
+      run: |
+        docker pull escomp/base
+        mkdir ~/ctsm-repos/ctsm-docs
+        cd ~/ctsm-repos/ctsm/doc
+        ./build_docs -b ~/ctsm-docs -d
+
+    # not needed if you get rid of ctsm-docs seperate repo
+    - name: Commit documentation for ctsm-docs
+      run: |
+        cd ~/ctsm-repos/ctsm-docs
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Update documentation"
+        git commit -m "Update documentation [skip ci]" || echo "No changes to commit"
+        git push origin gh-pages
+
+    # Better Solution they can use:
+    - name: Push to gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./ctsm-docs
+        publish_branch: gh-pages
+        keep_files: true
+

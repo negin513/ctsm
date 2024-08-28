@@ -40,8 +40,8 @@ Options that are more than a single character should be formatted as ``--some-va
 
 2. Standard options: verbose, silent, help and debug:
 
-Scripts should support ``--verbose`` / ``-v`` and ``--debug`` options. See comments at the top of ``ctsm_logging.py`` for details.
-Also the options silent and help are recommended as well.
+Scripts should support ``--verbose`` / ``-v``, ''--silent'',  and ``--debug`` options. See comments at the top of ``ctsm_logging.py`` for details.
+Also the help option is highly recommended as well.
 
 3. Value flags:
 
@@ -81,3 +81,10 @@ More verbose output should go in ``logger.info`` or ``logger.debug`` statements 
       * e.g. You might want to output a ``logging.debug`` statement for every variable in a file you are editing.
 
 Near the top of each python module where logging is used, there should be a line, ``logger = logging.getLogger(__name__)``. Then logging statements should be done using statements like ``logger.info(...)``, *not* ``logging.info(...)``: this allows more contextual information in logging output.
+
+====================================================
+ Considerations on inclusion of python packages
+====================================================
+
+Since, this is somewhat an implementation detail the discussion for this is in ``../../python/README.python_pkgs.rst``. The python
+packages used is somewhat both an important part of the user interface, the tool design, and an implementation detail.
